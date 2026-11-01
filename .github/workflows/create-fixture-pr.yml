@@ -1,0 +1,42 @@
+# Opens a fixture PR authored by github-actions[bot], so hellej can review it.
+name: create-fixture-pr
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch to create for the fixture PR
+        required: true
+        type: string
+      title:
+        description: PR title, prefixed [fixture]
+        required: true
+        type: string
+      base:
+        description: Branch to create the fixture branch from and open the PR into
+        required: false
+        default: main
+        type: string
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  create:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.base }}
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ inputs.branch }}
+          TITLE: ${{ inputs.title }}
+          BASE: ${{ inputs.base }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$BRANCH"
+          echo "fixture change on $BRANCH" >> fixture.txt
+          git commit -am "Fixture change on $BRANCH"
+          git push origin "$BRANCH"
+          gh pr create --base "$BASE" --head "$BRANCH" --title "$TITLE" \
+            --body "Test fixture for pr-slack-reminder-action. Do not merge or close."
